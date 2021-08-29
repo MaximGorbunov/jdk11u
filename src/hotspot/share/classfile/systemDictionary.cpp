@@ -312,7 +312,7 @@ class SuperClassResolvingMark : public StackObj {
     }
   private:
     Thread* _thread;
-}
+};
 
 
 // Must be called for any super-class or super-interface resolution
