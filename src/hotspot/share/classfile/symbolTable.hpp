@@ -228,7 +228,7 @@ public:
     return lookup(sym, begin, end, THREAD);
   }
   static Symbol* new_symbol(const char* name) {
-    return new_symbol(name, (int)strlen(name));
+    return new_symbol(name, (int)strlen(name), THREAD);
   }
 
   // Create a symbol in the arena for symbols that are not deleted
