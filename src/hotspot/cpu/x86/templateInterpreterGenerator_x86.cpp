@@ -428,7 +428,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(
       if (CompilationWarmUpRecording) {
         Label skip_record;
         JitWarmUp* jitWarmUp = JitWarmUp::instance();
-        assert(jitWarmup != NULL, "jitWarmUp should not be NULL");
+        assert(jitWarmUp != NULL, "jitWarmUp should not be NULL");
         const ExternalAddress current_init_order(jitWarmUp->recorder()->current_init_order_addr());
         __ movl(rcx, Address(rax, MethodCounters::interpreter_invocation_counter_offset()));
         __ cmp32(rcx, 1);
