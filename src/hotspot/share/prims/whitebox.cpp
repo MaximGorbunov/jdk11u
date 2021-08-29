@@ -1929,7 +1929,7 @@ WB_END
 WB_ENTRY(jboolean, WB_TestFixDanglingPointerInDeopt(JNIEnv* env, jobject o, jstring name))
   Handle h_name(THREAD, JNIHandles::resolve(name));
   if (h_name.is_null()) return false;
-  Symbol* sym = java_lang_String::as_symbol(h_name());
+  Symbol* sym = java_lang_String::as_symbol(h_name(), THREAD);
 
   JitWarmUp* jwp = JitWarmUp::instance();
   PreloadClassChain* chain = jwp->preloader()->chain();
