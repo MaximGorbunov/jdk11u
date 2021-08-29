@@ -756,7 +756,9 @@ public:
 #ifndef PRODUCT
   unsigned int initialize_order()          { return _initialize_order; }
   void set_initialize_order(int order)     { _initialize_order = order; }
-#endif+   // JWarmUP support
+#endif
+  
+  // JWarmUP support
   unsigned int crc32()                     { return _crc32; }
   void set_crc32(unsigned int crc32)       { _crc32 = crc32; }
 
