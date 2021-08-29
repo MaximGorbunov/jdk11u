@@ -1860,7 +1860,7 @@ Symbol* PreloadJitInfo::remove_meaningless_suffix(Symbol* s, TRAPS) {
   }
   if (i != len - 1){
     i = i == -1 ? 0 : i;
-    result = SymbolTable::new_symbol(s_char, i + 1);
+    result = SymbolTable::new_symbol(s_char, i + 1, THREAD);
   }
   return result;
 }
