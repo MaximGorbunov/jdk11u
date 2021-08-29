@@ -1629,7 +1629,7 @@ bool JitWarmUpLogParser::parse_header() {
   return true;
 }
 
-#define CREATE_SYMBOL(char_name)      \
+#define CREATE_SYMBOL(char_name, TRAPS)      \
   SymbolTable::new_symbol(char_name, (int)strlen(char_name), THREAD)
 
 bool JitWarmUpLogParser::parse_class_init_section() {
