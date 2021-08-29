@@ -79,7 +79,6 @@ JitWarmUp* JitWarmUp::create_instance() {
 
 // JitWarmUp Init functions
 JitWarmUp::JitWarmUpState JitWarmUp::init_for_recording() {
-  assert(CompilationWarmUpRecording && !CompilationWarmUp, "JVM option verify failure");
   _recorder = new ProfileRecorder();
   _recorder->set_holder(this);
   _recorder->init();
