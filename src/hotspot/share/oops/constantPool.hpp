@@ -965,14 +965,12 @@ class ConstantPool : public Metadata {
   void preload_jwarmup_classes(TRAPS);
 
   Klass* resolve_class_from_slot(int which, TRAPS);
-
- private:
-  void preload_jwarmup_classes_impl(Stack<InstanceKlass*, mtClass>& s, TRAPS);
-
 #ifndef PRODUCT
   // Compile the world support
   static void preload_and_initialize_all_classes(ConstantPool* constant_pool, TRAPS);
 #endif
+private:
+  void preload_jwarmup_classes_impl(Stack<InstanceKlass*, mtClass>& s, TRAPS);
 };
 
 class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
