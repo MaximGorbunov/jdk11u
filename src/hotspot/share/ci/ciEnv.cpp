@@ -770,25 +770,25 @@ bool ciEnv::check_field_resolved(ciInstanceKlass* accessor, int index) {
 // ------------------------------------------------------------------
 //
 // Check if all fields needed by this method in ConstantPool are resolved
-bool ciEnv::check_method_fields_all_resolved(ciMethod *method) {
-  ciInstanceKlass *klass = method->holder();
+bool ciEnv::check_method_fields_all_resolved(ciMethod* method) {
+  ciInstanceKlass* klass = method->holder();
   ciBytecodeStream stream(method);
   int start = 0;
   int limit = method->code_size();
   stream.reset_to_bci(start);
   Bytecodes::Code code;
-  while ((code = stream.next()) != ciBytecodeStream::EOBC && stream.cur_bci() < limit)
-  {
-    if (code == Bytecodes::_getfield ||
-        code == Bytecodes::_getstatic ||
-        code == Bytecodes::_putfield code == Bytecodes::_putstatic)
-    {
-      if (!check_field_resolved(klass, stream..get_index_u2_cpcache()))
-      {
+  while ((code = stream.next()) != ciBytecodeStream::EOBC() &&
+         stream.cur_bci() < limit) {
+    if (code == Bytecodes::_getfield   ||
+        code == Bytecodes::_getstatic  ||
+        code == Bytecodes::_putfield   ||
+        code == Bytecodes::_putstatic) {
+      if (!check_field_resolved(klass, stream.get_index_u2_cpcache())) {
         return false;
       }
     }
   }
+  return true;
 }
 // ------------------------------------------------------------------
 // ciEnv::lookup_method
