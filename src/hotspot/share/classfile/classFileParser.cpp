@@ -5663,7 +5663,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
       if(_stream->source() == NULL) {
         ik->set_source_file_path(NULL);
       } else {
-        ik->set_source_file_path(SymbolTable::new_symbol(_stream->source()));
+        ik->set_source_file_path(SymbolTable::new_symbol(_stream->source(), THREAD));
       }
   }
   if (_host_klass != NULL) {
