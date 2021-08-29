@@ -2438,6 +2438,7 @@ void ConstantPool::preload_jwarmup_classes_impl(Stack<InstanceKlass*, mtClass>& 
       } // end of if is_unresolved
     } // end of loop
   } // end of while
+}
 
 #ifndef PRODUCT
 
