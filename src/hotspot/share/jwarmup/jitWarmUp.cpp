@@ -191,11 +191,6 @@ ProfileRecorder::~ProfileRecorder() {
 
 void ProfileRecorder::init() {
   assert(_state == NOT_INIT, "state error");
-  if (CompilationWarmUp) {
-    log_error(warmup)("[JitWarmUp] ERROR: you can not set both CompilationWarmUp and CompilationWarmUpRecording");
-    _state = IS_ERR;
-    return;
-  }
   if (!ProfileInterpreter) {
     log_error(warmup)("[JitWarmUp] ERROR: flag ProfileInterpreter must be on");
     _state = IS_ERR;
