@@ -42,6 +42,8 @@
 #include "interpreter/oopMapCache.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "jwarmup/jitWarmUp.hpp"
+#include "jwarmup/jitWarmUpThread.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logStream.hpp"
@@ -234,6 +236,7 @@ Thread::Thread() {
   set_active_handles(NULL);
   set_free_handle_block(NULL);
   set_last_handle_mark(NULL);
+  set_in_eagerly_loading_class(false);
 
   // This initial value ==> never claimed.
   _oops_do_parity = 0;
@@ -257,6 +260,7 @@ Thread::Thread() {
   _current_pending_monitor = NULL;
   _current_pending_monitor_is_from_java = true;
   _current_waiting_monitor = NULL;
+  _super_class_resolving_recursive_count = 0;
   _num_nested_signal = 0;
   omFreeList = NULL;
   omFreeCount = 0;
@@ -3998,6 +4002,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
 
   BiasedLocking::init();
+  if (CompilationWarmUp) {
+    JitWarmUp* jwp = JitWarmUp::instance();
+    assert(jwp != NULL, "sanity check");
+    jwp->preloader()->jvm_booted_is_done();
+  }
 
 #if INCLUDE_RTM_OPT
   RTMLockingCounters::init();
@@ -4684,6 +4693,10 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     st->cr();
   }
 
+  if (CompilationWarmUpRecording) {
+    JitWarmUpFlushThread::print_jwarmup_threads_on(st);
+    st->cr();
+  }
   st->flush();
 }
 

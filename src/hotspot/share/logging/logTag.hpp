@@ -170,6 +170,7 @@
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
   LOG_TAG(vtablestubs) \
+  LOG_TAG(warmup) \
   LOG_TAG(workgang) \
   LOG_TAG_LIST_EXT
 

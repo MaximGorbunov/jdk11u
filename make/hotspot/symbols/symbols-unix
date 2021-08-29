@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019 Alibaba Group Holding Limited. All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,7 @@ JVM_ArrayCopy
 JVM_AssertionStatusDirectives
 JVM_BeforeHalt
 JVM_CallStackWalk
+JVM_CheckJWarmupCompilationIsComplete
 JVM_Clone
 JVM_ConstantPoolGetClassAt
 JVM_ConstantPoolGetClassAtIfLoaded
@@ -162,6 +164,8 @@ JVM_NativePath
 JVM_NewArray
 JVM_NewInstanceFromConstructor
 JVM_NewMultiArray
+JVM_NotifyApplicationStartupIsDone
+JVM_NotifyJVMDeoptWarmUpMethods
 JVM_RaiseSignal
 JVM_RawMonitorCreate
 JVM_RawMonitorDestroy

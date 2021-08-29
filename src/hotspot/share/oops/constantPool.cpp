@@ -31,6 +31,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jwarmup/jitWarmUp.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
@@ -53,6 +54,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/stack.inline.hpp"
 
 constantTag ConstantPool::tag_at(int which) const { return (constantTag)tags()->at_acquire(which); }
 
@@ -61,7 +63,13 @@ void ConstantPool::release_tag_at_put(int which, jbyte t) { tags()->release_at_p
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
   int size = ConstantPool::size(length);
-  return new (loader_data, size, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
+  if (CompilationWarmUp) {
+    Array<u1>* jwp_tags = NULL;
+    jwp_tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
+    return new (loader_data, size, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags, jwp_tags);
+  } else {
+    return new (loader_data, size, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
+  }
 }
 
 #ifdef ASSERT
@@ -84,7 +92,7 @@ static bool tag_array_is_zero_initialized(Array<u1>* tags) {
 ConstantPool::ConstantPool(Array<u1>* tags) :
   _tags(tags),
   _length(tags->length()) {
-
+    assert(!CompilationWarmUp, "not in CompilationWarmUp");
     assert(_tags != NULL, "invariant");
     assert(tags->length() == _length, "invariant");
     assert(tag_array_is_zero_initialized(tags), "invariant");
@@ -92,6 +100,25 @@ ConstantPool::ConstantPool(Array<u1>* tags) :
     assert(0 == version(), "invariant");
     assert(NULL == _pool_holder, "invariant");
 }
+
+ConstantPool::ConstantPool(Array<u1>* tags, Array<u1>* jwp_tags) :
+  _tags(tags),
+  _length(tags->length()) {
+    assert(CompilationWarmUp, "must in CompilationWarmUp");
+    assert(jwp_tags != NULL, "invariant");
+    assert(jwp_tags->length() == _length, "invariant");
+
+    for (int i = 0; i < jwp_tags->length(); i++) {
+      jwp_tags->at_put(i, _jwp_has_not_been_traversed);
+    }
+    set_jwp_tags(jwp_tags);
+    assert(_tags != NULL, "invariant");
+    assert(tags->length() == _length, "invariant");
+    assert(tag_array_is_zero_initialized(tags), "invariant");
+    assert(0 == flags(), "invariant");
+    assert(0 == version(), "invariant");
+    assert(NULL == _pool_holder, "invariant");
+  }
 
 void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   if (cache() != NULL) {
@@ -110,6 +137,11 @@ void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   // free tag array
   MetadataFactory::free_array<u1>(loader_data, tags());
   set_tags(NULL);
+  if (CompilationWarmUp) {
+    assert(jwp_tags() != NULL, "should not be NULL");
+    MetadataFactory::free_array<u1>(loader_data, jwp_tags());
+    set_jwp_tags(NULL);
+  }
 }
 
 void ConstantPool::release_C_heap_structures() {
@@ -2323,6 +2355,88 @@ void ConstantPool::patch_resolved_references(GrowableArray<Handle>* cp_patches) 
   }
 #endif // ASSERT
 }
+
+  
+void ConstantPool::preload_jwarmup_classes(TRAPS) {
+  constantPoolHandle cp(THREAD, this);
+  guarantee(cp->pool_holder() != NULL, "must be fully loaded");
+  if (THREAD->in_eagerly_loading_class()) {
+    return;
+  }
+  THREAD->set_in_eagerly_loading_class(true);
+  Stack<InstanceKlass*, mtClass> s;
+  s.push(cp->pool_holder());
+  preload_jwarmup_classes_impl(s, THREAD);
+  THREAD->set_in_eagerly_loading_class(false);
+
+// should not be guarded in PreloadClassChain_lock
+Klass* ConstantPool::resolve_class_from_slot(int which, TRAPS) {
+  assert(THREAD->is_Java_thread(), "must be a Java thread");
+  if (CompilationWarmUpResolveClassEagerly) {
+    Klass* k = klass_at(which, CHECK_NULL);
+    return k;
+  } else {
+    // Create a handle for the mirror. This will preserve the resolved class
+    // until the loader_data is registered.
+    Handle mirror_handle;
+    constantPoolHandle this_oop(THREAD, this);
+    Symbol* name = NULL;
+    Handle  loader;
+    {
+      if (this_oop->tag_at(which).is_unresolved_klass()) {
+        if (this_oop->tag_at(which).is_unresolved_klass_in_error()) {
+          return NULL;
+        } else {
+          name   = this_oop->klass_name_at(which);
+          loader = Handle(THREAD, this_oop->pool_holder()->class_loader());
+        }
+      }
+    }
+    oop protection_domain = this_oop->pool_holder()->protection_domain();
+    Handle h_prot (THREAD, protection_domain);
+    Klass* k_oop = SystemDictionary::resolve_or_fail(name, loader, h_prot, true, THREAD);
+    return k_oop;
+  }
+}
+
+// use bfs instead recursive
+void ConstantPool::preload_jwarmup_classes_impl(Stack<InstanceKlass*, mtClass>& s,
+                                                  TRAPS) {
+  JitWarmUp* jwp = JitWarmUp::instance();
+  while (!s.is_empty()) {
+    constantPoolHandle cp(s.pop()->constants());
+    for (int i = 0; i< cp->length();  i++) {
+      bool is_unresolved = false;
+      Symbol* name = NULL;
+      {
+        if (cp->tag_at(i).is_unresolved_klass() && !cp->jwarmup_traversed_at(i)) {
+          name = cp->klass_name_at(i);
+          is_unresolved = true;
+          cp->jwarmup_has_traversed_at(i);
+        }
+      }
+      if (is_unresolved) {
+        if (name != NULL && !jwp->preloader()->should_load_class_eagerly(name)) {
+          continue;
+        }
+        // Load class from ConstantPool slot, if flag CompilationWarmUpResolveClassEagerly
+        // is on, update ConstantPool status accordingly and assign to that slot.
+        Klass* klass = cp->resolve_class_from_slot(i, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          ResourceMark rm;
+          log_warning(warmup)("[JitWarmUp] WARNING : resolve %s from constant pool failed",
+                              name->as_C_string());
+          // ignore LinkageError in loading class
+          if (PENDING_EXCEPTION->is_a(SystemDictionary::LinkageError_klass())) {
+            CLEAR_PENDING_EXCEPTION;
+          }
+        }
+        if (klass != NULL && klass->is_instance_klass()) {
+          s.push((InstanceKlass*)klass);
+        }
+      } // end of if is_unresolved
+    } // end of loop
+  } // end of while
 
 #ifndef PRODUCT
 

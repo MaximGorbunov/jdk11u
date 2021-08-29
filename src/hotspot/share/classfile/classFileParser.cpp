@@ -5659,6 +5659,13 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   ik->set_has_nonstatic_concrete_methods(_has_nonstatic_concrete_methods);
   ik->set_declares_nonstatic_concrete_methods(_declares_nonstatic_concrete_methods);
 
+  if (CompilationWarmUp || CompilationWarmUpRecording) {
+      if(_stream->source == NULL) {
+        ik->set_source_file_path(NULL);
+      } else {
+        ik->set_source_file_path(SymbolTable::new_symbol(_stream->source()));
+      }
+  }
   if (_host_klass != NULL) {
     assert (ik->is_anonymous(), "should be the same");
     ik->set_host_klass(_host_klass);
@@ -5797,6 +5804,13 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   }
 
   JFR_ONLY(INIT_ID(ik);)
+
+  if (CompilationWarmUp || CompilationWarmUpRecording) {
+    unsigned int crc32 = ClassLoader::crc32(0, (char*)(_stream->buffer()), _stream->length());
+    unsigned int class_bytes_size = _stream->length();
+    ik->set_crc32(crc32);
+    ik->set_bytes_size(class_bytes_size);
+  }
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field

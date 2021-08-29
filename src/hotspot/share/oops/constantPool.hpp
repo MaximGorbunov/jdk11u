@@ -36,6 +36,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/stack.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
 // class file.
@@ -113,6 +114,13 @@ class ConstantPool : public Metadata {
   Array<Klass*>*       _resolved_klasses;
 
   enum {
+    _jwp_has_not_been_traversed = 0,
+    _jwp_has_been_traversed = 1
+  };
+ 
+  Array<u1>*           _jwp_tags;    // the jwp tag array records the corresponding tag whether it is traversed
+
+  enum {
     _has_preresolution    = 1,       // Flags
     _on_stack             = 2,
     _is_shared            = 4,
@@ -130,6 +138,7 @@ class ConstantPool : public Metadata {
   } _saved;
 
   void set_tags(Array<u1>* tags)               { _tags = tags; }
+  void set_jwp_tags(Array<u1>* tags)           { _jwp_tags = tags; }
   void tag_at_put(int which, jbyte t)          { tags()->at_put(which, t); }
   void release_tag_at_put(int which, jbyte t);
 
@@ -176,6 +185,8 @@ class ConstantPool : public Metadata {
   }
 
   ConstantPool(Array<u1>* tags);
+  // for JWarmUP
+  ConstantPool(Array<u1>* tags, Array<u1>* jwp_tags);
   ConstantPool() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
  public:
   static ConstantPool* allocate(ClassLoaderData* loader_data, int length, TRAPS);
@@ -184,6 +195,18 @@ class ConstantPool : public Metadata {
 
   Array<u1>* tags() const                   { return _tags; }
   Array<u2>* operands() const               { return _operands; }
+  
+  Array<u1>* jwp_tags() const               { return _jwp_tags; }
+
+  bool jwarmup_traversed_at(int which) {
+    assert(0 < which && which < jwp_tags()->length(), "out of bound");
+    return jwp_tags()->at(which) == _jwp_has_been_traversed;
+  }
+
+  void jwarmup_has_traversed_at(int which) {
+    assert(which < jwp_tags()->length(), "out of bound");
+    jwp_tags()->at_put(which, _jwp_has_been_traversed);
+  }  
 
   bool has_preresolution() const            { return (_flags & _has_preresolution) != 0; }
   void set_has_preresolution() {
@@ -938,6 +961,13 @@ class ConstantPool : public Metadata {
   void print_entry_on(int index, outputStream* st);
 
   const char* internal_name() const { return "{constant pool}"; }
+
+  void preload_jwarmup_classes(TRAPS);
+
+  Klass* resolve_class_from_slot(int which, TRAPS);
+
+ private:
+  void preload_jwarmup_classes_impl(Stack<InstanceKlass*, mtClass>& s, TRAPS);
 
 #ifndef PRODUCT
   // Compile the world support

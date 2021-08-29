@@ -31,6 +31,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
+#include "jwarmup/jitWarmUp.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
@@ -422,6 +423,21 @@ void TemplateInterpreterGenerator::generate_counter_incr(
                   InvocationCounter::counter_offset());
 
     __ get_method_counters(rbx, rax, done);
+    #ifdef _LP64
+      // JitWamup suppot, reocrd method first invocation's initialization order
+      if (CompilationWarmupRecording) {
+        Label skip_record;
+        JitWarmUp* jitWarmUp = JitWarmUp::instance();
+        assert(jitwarmup != NULL, "jitWarmUp should not be NULL");
+        const ExternalAddress current_init_order(jitWarmUp->recorder()->current_init_order_addr());
+        __ movl(rcx, Address(rax, MethodCounters::interpreter_invocation_counter_offset()));
+        __ cmp32(rcx, 1);
+        __ jcc(Assembler::above, skip_record);
+        __ mov32(rcx, current_init_order);
+        __ movl(Address(rbx, Method::first_invoke_init_order_offset()), rcx);
+        __ bind(skip_record);
+      }
+    #endif
 
     if (ProfileInterpreter) {
       __ incrementl(Address(rax,

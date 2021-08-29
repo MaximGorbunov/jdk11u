@@ -55,6 +55,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Whitebox,         // Whitebox API
       Reason_MustBeCompiled,   // Java callHelper, LinkResolver
       Reason_Bootstrap,        // JVMCI bootstrap
+      Reason_JWarmUp,          // JWarmUp
       Reason_Count
   };
 
@@ -68,7 +69,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "replay",
       "whitebox",
       "must_be_compiled",
-      "bootstrap"
+      "bootstrap",
+      "jwarmup"
     };
     return reason_names[compile_reason];
   }
@@ -146,6 +148,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
     }
   }
 
+  bool         is_jwarmup_compilation() const    { return _compile_reason == Reason_JWarmUp; }
   bool         has_waiter() const                { return _has_waiter; }
   void         clear_waiter()                    { _has_waiter = false; }
   CompilerThread* jvmci_compiler_thread() const  { return _jvmci_compiler_thread; }

@@ -116,6 +116,12 @@ class Method : public Metadata {
   CompiledMethod* _aot_code;
 #endif
 
+  int _first_invoke_init_order;  // class initialization order when this method first time invoked
+  bool _compiled_by_jwarmup;
+#ifndef PRODUCT
+  bool _deopted_by_jwarmup;
+#endif
+
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags);
  public:
@@ -177,6 +183,27 @@ class Method : public Metadata {
   AnnotationArray* type_annotations() const      {
     return constMethod()->type_annotations();
   }
+
+  int  first_invoke_init_order()                   { return _first_invoke_init_order; }
+  void set_first_invoke_init_order(int value)      { _first_invoke_init_order = value; }
+
+  bool compiled_by_jwarmup()                      { return _compiled_by_jwarmup; }
+  void set_compiled_by_jwarmup(bool value)        { _compiled_by_jwarmup = value; }
+
+#ifndef PRODUCT
+  bool deopted_by_jwarmup()                        { return _deopted_by_jwarmup; }
+  void set_deopted_by_jwarmup(bool value)          { _deopted_by_jwarmup = value; }
+#endif
+
+  static ByteSize first_invoke_init_order_offset() {
+    return byte_offset_of(Method, _first_invoke_init_order);
+  }
+
+#ifdef CC_INTERP
+  void set_result_index(BasicType type);
+  int  result_index()                            { return _result_index; }
+#endif
+
 
   // Helper routine: get klass name + "." + method name + signature as
   // C string, for the purpose of providing more useful

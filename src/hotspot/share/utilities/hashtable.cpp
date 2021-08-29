@@ -244,6 +244,7 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char* top, char* end) {
 static int literal_size(ConstantPool*) { return 0; }
 static int literal_size(Klass*)        { return 0; }
 static int literal_size(nmethod*)      { return 0; }
+static int literal_size(Method*)       { return 0; }
 
 static int literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;
@@ -459,6 +460,7 @@ template class Hashtable<Klass*, mtClass>;
 template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<ClassLoaderWeakHandle, mtClass>;
 template class Hashtable<Symbol*, mtModule>;
+template class Hashtable<Symbol*, mtInternal>;
 template class Hashtable<oop, mtSymbol>;
 template class Hashtable<ClassLoaderWeakHandle, mtSymbol>;
 template class Hashtable<Symbol*, mtClass>;
@@ -476,6 +478,10 @@ template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;
 template class BasicHashtable<mtModule>;
 template class BasicHashtable<mtCompiler>;
+template class Hashtable<Method*, mtInternal>;
+template class Hashtable<Method*, mtNone>;
+template class BasicHashtable<mtNone>;
+template class Hashtable<Symbol*, mtNone>;
 
 template void BasicHashtable<mtClass>::verify_table<DictionaryEntry>(char const*);
 template void BasicHashtable<mtModule>::verify_table<ModuleEntry>(char const*);

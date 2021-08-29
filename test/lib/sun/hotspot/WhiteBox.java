@@ -445,6 +445,17 @@ public class WhiteBox {
   // CPU features
   public native String getCPUFeatures();
 
+  // JitWarmUp
+  public native String[] getClassInitOrderList();
+  public native String[] getCompiledMethodList();
+  public native String[] getClassListFromLogfile();
+  public native String[] getClassLoadedRecordList();
+  public native String[] getMethodListFromLogfile();
+  public native boolean  forceCompileInJitWarmUp(Executable method);
+  public native String[] getClassChainSymbolList();
+  public native int[]    getClassChainStateList();
+  public native boolean  testFixDanglingPointerInDeopt(String name);
+
   // VM flags
   public native boolean isConstantVMFlag(String name);
   public native boolean isLockedVMFlag(String name);

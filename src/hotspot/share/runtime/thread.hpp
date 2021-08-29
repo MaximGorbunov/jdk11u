@@ -295,6 +295,18 @@ class Thread: public ThreadShadow {
   bool is_suspendible_thread() { return _suspendible_thread; }
 #endif
 
+  // JWarmUP support
+ private:
+  int  _super_class_resolving_recursive_count;
+  bool _in_eagerly_loading_class;
+
+ public:
+  bool in_eagerly_loading_class()               { return _in_eagerly_loading_class; }
+  void set_in_eagerly_loading_class(bool value) { _in_eagerly_loading_class = value; }
+  void super_class_resolving_recursive_inc()    { _super_class_resolving_recursive_count++; }
+  void super_class_resolving_recursive_dec()    { _super_class_resolving_recursive_count--; }
+  bool in_super_class_resolving() const         { return _super_class_resolving_recursive_count > 0; }
+
  private:
   // Active_handles points to a block of handles
   JNIHandleBlock* _active_handles;

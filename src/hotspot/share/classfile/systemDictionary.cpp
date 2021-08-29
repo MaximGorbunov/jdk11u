@@ -290,6 +290,30 @@ Klass* SystemDictionary::resolve_array_class_or_null(Symbol* class_name,
   return k;
 }
 
+class SuperClassResolvingMark : public StackObj {
+  public: 
+    SuperClassResolvingMark() {
+      initialize(Thread::current());
+    }
+
+    SuperClassResolvingMark(Thread* thread) {
+      initialize(thread);
+    }
+
+    ~SuperClassResolvingMark() {
+      assert(CompilationWarmUp, "wrong usage");
+      _thread->super_class_resolving_recursive_dec();
+    }
+  protected: 
+    void initialize(Thread* thread) {
+      assert(CompilationWarmUp, "wrong usage");
+      _thread = thread;
+      _thread->super_class_resolving_recursive_inc();
+    }
+  private:
+    Thread* _thread;
+}
+
 
 // Must be called for any super-class or super-interface resolution
 // during class definition to allow class circularity checking
@@ -405,10 +429,19 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
 // java.lang.Object should have been found above
   assert(class_name != NULL, "null super class for resolving");
   // Resolve the super class or interface, check results on return
-  Klass* superk = SystemDictionary::resolve_or_null(class_name,
-                                                    class_loader,
-                                                    protection_domain,
-                                                    THREAD);
+  Klass* superk = NULL;
+  if (CompilationWarmUp) {
+    SuperClassResolvingMark scrm;
+    superk = SystemDictionary::resolve_or_null(class_name,
+                                                      class_loader,
+                                                      protection_domain,
+                                                      THREAD);
+  } else {
+    superk = SystemDictionary::resolve_or_null(class_name,
+                                                      class_loader,
+                                                      protection_domain,
+                                                      THREAD);
+  }
 
   // Clean up of placeholders moved so that each classloadAction registrar self-cleans up
   // It is no longer necessary to keep the placeholder table alive until update_dictionary
@@ -878,6 +911,13 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     assert(kk == k, "should be present in dictionary");
   }
 #endif
+  if (CompilationWarmUp) {
+    if (!class_has_been_loaded) {
+      JitWarmUp* jitWarmUp = JitWarmUp::instance();
+      assert(jitWarmUp != NULL, "sanity check");
+      jitWarmUp->preloader()->resolve_loaded_klass(k);
+    }
+  }
 
   // return if the protection domain in NULL
   if (protection_domain() == NULL) return k;
@@ -1133,6 +1173,11 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     assert(check == k, "should be present in the dictionary");
   } );
 
+  if (CompilationWarmUp) {
+    JitWarmUp* jitWarmUp = JitWarmUp::instance();
+    assert(jitWarmUp != NULL, "sanity check");
+    jitWarmUp->preloader()->resolve_loaded_klass(k);
+  }
   return k;
 }
 

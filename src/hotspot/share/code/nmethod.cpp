@@ -542,6 +542,10 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     DEBUG_ONLY(nm->verify();)
     nm->log_new_nmethod();
   }
+  if (CompilationWarmUpRecording && nm != NULL && comp_level >= CompilationWarmUpRecordMinLevel) {
+    int bci = nm->is_osr_method() ? nm->osr_entry_bci() : InvocationEntryBci;
+    JitWarmUp::instance()->recorder()->add_method(nm->method(), bci);
+  }
   return nm;
 }
 

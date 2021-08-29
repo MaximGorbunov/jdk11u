@@ -535,6 +535,39 @@ static const char* make_log_name(const char* log_name, const char* force_directo
                                 timestr);
 }
 
+randomAccessFileStream::randomAccessFileStream() : fileStream() {  }
+
+randomAccessFileStream::randomAccessFileStream(const char* file_name)
+  : fileStream(file_name) {  }
+
+randomAccessFileStream::randomAccessFileStream(const char* file_name, const char* opentype)
+  : fileStream(file_name, opentype) {  }
+
+randomAccessFileStream::randomAccessFileStream(FILE* file, bool need_close)
+  : fileStream(file, need_close) {  }
+
+void randomAccessFileStream::write(const char* s, size_t len, long pos) {
+  assert(pos <= fileSize(), "pos check");
+  if (_file != NULL)  {
+    long old_pos = ftell();
+    if (old_pos != pos) {
+      int ret = fseek(pos, SEEK_SET);
+      assert(ret != -1, "fseek return value check");
+    }
+    size_t count = fwrite(s, 1, len, _file);
+    if (old_pos != pos) {
+      fseek(old_pos, SEEK_SET);
+    }
+  }
+}
+
+void randomAccessFileStream::write(const char* s, size_t len) {
+  if (_file != NULL)  {
+    // Make an unused local variable to avoid warning from gcc 4.x compiler.
+    size_t count = fwrite(s, 1, len, _file);
+  }
+}
+
 fileStream::fileStream(const char* file_name) {
   _file = fopen(file_name, "w");
   if (_file != NULL) {

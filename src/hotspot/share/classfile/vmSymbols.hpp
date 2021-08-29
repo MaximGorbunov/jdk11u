@@ -307,6 +307,8 @@
   template(java_lang_invoke_LambdaForm_Compiled_signature, "Ljava/lang/invoke/LambdaForm$Compiled;") \
   template(java_lang_invoke_LambdaForm_Hidden_signature, "Ljava/lang/invoke/LambdaForm$Hidden;")  \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, "Ljava/lang/invoke/MethodHandleNatives$CallSiteContext;") \
+  /* JitWarmUp support */ \
+  template(jdk_jwarmup_JWarmUp,                       "jdk/jwarmup/JWarmUp")                      \
   /* internal up-calls made only by the JVM, via class sun.invoke.MethodHandleNatives: */         \
   template(findMethodHandleType_name,                 "findMethodHandleType")                     \
   template(findMethodHandleType_signature,       "(Ljava/lang/Class;[Ljava/lang/Class;)Ljava/lang/invoke/MethodType;") \
@@ -430,6 +432,7 @@
   template(vmdependencies_name,                       "vmdependencies")                           \
   template(loader_name,                               "loader")                                   \
   template(getModule_name,                            "getModule")                                \
+  template(jwarmup_dummy_name,                        "dummy")                                    \
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
   template(input_stream_signature,                    "Ljava/io/InputStream;")                    \
   template(print_stream_signature,                    "Ljava/io/PrintStream;")                    \

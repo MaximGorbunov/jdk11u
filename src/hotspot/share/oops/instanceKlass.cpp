@@ -41,6 +41,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
+#include "jwarmup/jitWarmUp.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
@@ -424,6 +425,14 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
     set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
                                                     false));
 
+  set_jwarmup_recorded(false);
+#ifndef PRODUCT
+  set_initialize_order(-1);
+#endif
+  set_crc32(0);
+  set_bytes_size(0);
+  set_source_file_path(NULL);                                                    
+
     assert(NULL == _methods, "underlying memory not zeroed?");
     assert(is_instance_klass(), "is layout incorrect?");
     assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
@@ -482,6 +491,13 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
   // Need to take this class off the class loader data list.
   loader_data->remove_class(this);
+
+  if (CompilationWarmUp || CompilationWarmUpRecording) {
+    if (source_file_path() != NULL) {
+      source_file_path()->decrement_refcount();
+      set_source_file_path(NULL);
+    }
+  }
 
   // The array_klass for this class is created later, after error handling.
   // For class redefinition, we keep the original class so this scratch class
@@ -949,6 +965,10 @@ void InstanceKlass::initialize_impl(TRAPS) {
     // Step 6
     set_init_state(being_initialized);
     set_init_thread(self);
+  }
+  
+  if (CompilationWarmUpRecording) {
+    JitWarmUp::instance()->recorder()->assign_class_init_order(this);
   }
 
   // Step 7

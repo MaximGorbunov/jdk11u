@@ -54,6 +54,7 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
+#include "jwarmup/jitWarmUp.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "logging/log.hpp"
@@ -1381,6 +1382,13 @@ bool ClassLoaderDataGraph::do_unloading(bool clean_previous_versions) {
                            InstanceKlass::has_previous_versions_and_reset();
   MetadataOnStackMark md_on_stack(walk_all_metadata);
 
+  // Unload PreloadClassChain
+  if (CompilationWarmUp) {
+    JitWarmUp* jitWarmUp = JitWarmUp::instance();
+    assert (jitWarmUp != NULL, "sanity check");
+    PreloadClassChain* chain = jitWarmUp->preloader()->chain();
+    chain->do_unloading();
+  }
   // Save previous _unloading pointer for CMS which may add to unloading list before
   // purging and we don't want to rewalk the previously unloaded class loader data.
   _saved_unloading = _unloading;

@@ -26,6 +26,7 @@
 #define SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP
 
 #include "classfile/classLoader.hpp"
+#include "jwarmup/jitWarmUp.hpp"
 #include "jvmci/systemDictionary_jvmci.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/symbol.hpp"
@@ -227,6 +228,8 @@ class OopStorage;
 class SystemDictionary : AllStatic {
   friend class VMStructs;
   friend class SystemDictionaryHandles;
+  friend class JitWarmUp;
+  friend class PreloadJitInfo;
 
  public:
   enum WKID {

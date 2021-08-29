@@ -609,6 +609,7 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepoint, cleanup) },
   { "TraceJVMTIObjectTagging",   LogLevel::Debug, true,  LOG_TAGS(jvmti, objecttagging) },
   { "TraceRedefineClasses",      LogLevel::Info,  false, LOG_TAGS(redefine, class) },
+  { "PrintCompilationWarmUpDetail", LogLevel::Debug,  true, LOG_TAGS(warmup) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
@@ -3022,6 +3023,19 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     FLAG_SET_DEFAULT(UseLinuxPosixThreadCPUClocks, false);
   }
 #endif // LINUX
+
+#ifndef LINUX
+  if (CompilationWarmUpRecording || CompilationWarmUp) {
+    warning("JWarmUp only supported on Linux platform");
+    if (CompilationWarmUpRecording) {
+      CompilationWarmUpRecording = false;
+    }
+    if (CompilationWarmUp) {
+      CompilationWarmUp = false;
+    }
+  }
+#endif // end of LINUX
+
   fix_appclasspath();
   return JNI_OK;
 }

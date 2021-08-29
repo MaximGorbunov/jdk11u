@@ -2839,6 +2839,10 @@ bool GraphKit::seems_never_null(Node* obj, ciProfileData* data, bool& speculatin
       && obj != null()               // And not the -Xcomp stupid case?
       && !too_many_traps(reason)
       ) {
+    // jwarmup skips checking profiling for now.
+    if (CompilationWarmUp && this->C->env()->task()->is_jwarmup_compilation()) {
+      return false;
+    }    
     if (speculating) {
       return true;
     }
@@ -2919,6 +2923,10 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
 
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
+    // jwarmup skips type cast for now.
+    if (CompilationWarmUp && this->C->env()->task()->is_jwarmup_compilation()) {
+      return obj;
+    }
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
     Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
 

@@ -35,9 +35,11 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jwarmup/jitWarmUp.hpp"
 #include "logging/log.hpp"
 #include "memory/heapShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -48,6 +50,7 @@
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,6 +62,7 @@
 #include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/compilationPolicy.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -3784,3 +3788,90 @@ JVM_END
 JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
+
+JVM_ENTRY(void, JVM_NotifyApplicationStartUpIsDone(JNIEnv* env, jobject obj))
+{
+  JVMWrapper("JVM_NotifyApplicationStartUpIsDone");
+  if (!CompilationWarmUp) {
+    log_warning(warmup)("CompilationWarmUp is off, "
+                        "notifyApplicationStartUpIsDone is invalid");
+    return;
+  }
+
+  jclass cls;
+  {
+    ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
+    cls = env->GetObjectClass(obj);
+  }
+  Handle mirror(THREAD, JNIHandles::resolve_non_null(cls));
+  assert(mirror() != NULL, "sanity check");
+  Klass* k = java_lang_Class::as_Klass(mirror());
+  Method* dummy_method = k->lookup_method(vmSymbols::jwarmup_dummy_name(), vmSymbols::void_method_signature());
+  assert(dummy_method != NULL, "Cannot find dummy method in jdk.jwarmup.JWarmUp");
+  JitWarmUp* jwp = JitWarmUp::instance();
+  assert(jwp != NULL, "sanity check");
+  jwp->set_dummy_method(dummy_method);
+  jwp->preloader()->notify_application_startup_is_done();
+}
+JVM_END
+
+JVM_ENTRY(jboolean, JVM_CheckJWarmUpCompilationIsComplete(JNIEnv *env, jobject obj))
+{
+  JVMWrapper("JVM_CheckJWarmUpCompilationIsComplete");
+  if (!CompilationWarmUp) {
+    log_warning(warmup)("CompilationWarmUp is off, "
+                        "checkIfCompilationIsComplete is invalid");
+    return JNI_TRUE;
+  }
+  JitWarmUp* jwp = JitWarmUp::instance();
+  Method* dm = jwp->dummy_method();
+  assert(dm != NULL, "sanity check");
+  if (dm->code() != NULL) {
+    return JNI_TRUE;
+  } else {
+    return JNI_FALSE;
+  }
+}
+JVM_END
+
+JVM_ENTRY(void, JVM_NotifyJVMDeoptWarmUpMethods(JNIEnv *env, jobject obj))
+{
+  JVMWrapper("JVM_NotifyJVMDeoptWarmUpMethods");
+  if (!(CompilationWarmUp && CompilationWarmUpExplicitDeopt)) {
+    log_error(warmup)("CompilationWarmUp or CompilationWarmUpExplicitDeopt is off, "
+                      "notifyJVMDeoptWarmUpMethods is invalid");
+    return;
+  }
+  JitWarmUp* jwp = JitWarmUp::instance();
+  Method* dm = jwp->dummy_method();
+  if (dm != NULL && dm->code() != NULL) {
+    PreloadClassChain* chain = jwp->preloader()->chain();
+    assert(chain != NULL, "sanity check");
+    if (chain->notify_deopt_signal()) {
+      log_info(warmup)("JitWarmUp: receive signal to deoptimize warmup methods");
+    } else {
+      log_warning(warmup)("JitWarmUp: deoptimize signal is ignored");
+    }
+  } else {
+    log_warning(warmup)("JitWarmUp: deoptimize signal is ignored because warmup is not finished");
+  }
+}
+JVM_END
+
+#define CC (char*)
+static JNINativeMethod jdk_jwarmup_JWarmUp_methods[] = {
+  { CC "notifyApplicationStartUpIsDone0", CC "()V", (void *)&JVM_NotifyApplicationStartUpIsDone},
+  { CC "checkIfCompilationIsComplete0",   CC "()Z", (void *)&JVM_CheckJWarmUpCompilationIsComplete},
+  { CC "notifyJVMDeoptWarmUpMethods0",    CC "()V", (void *)&JVM_NotifyJVMDeoptWarmUpMethods}
+};
+
+JVM_ENTRY(void, JVM_RegisterJWarmUpMethods(JNIEnv *env, jclass jwarmupclass))
+
+  JVMWrapper("JVM_RegisterJWarmUpMethods");
+  ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
+
+  int ok = env->RegisterNatives(jwarmupclass, jdk_jwarmup_JWarmUp_methods, sizeof(jdk_jwarmup_JWarmUp_methods)/sizeof(JNINativeMethod));
+  guarantee(ok == 0, "register jdk.jwarmup.JWarmUp natives");
+
+JVM_END
+#undef CC

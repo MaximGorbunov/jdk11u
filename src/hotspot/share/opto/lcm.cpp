@@ -82,6 +82,9 @@ static bool needs_explicit_null_check_for_read(Node *val) {
 // The val is the pointer being checked for nullness or
 // decodeHeapOop_not_null node if it did not fold into address.
 void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allowed_reasons) {
+  // to reduce deoptimization, disable implicit_null_check for jwarmup compilation
+  if (CompilationWarmUp && this->C->env()->task()->is_jwarmup_compilation()) return;
+
   // Assume if null check need for 0 offset then always needed
   // Intel solaris doesn't support any null checks yet and no
   // mechanism exists (yet) to set the switches at an os_cpu level

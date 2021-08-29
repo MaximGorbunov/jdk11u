@@ -736,6 +736,60 @@ ciField* ciEnv::get_field_by_index(ciInstanceKlass* accessor,
   GUARDED_VM_ENTRY(return get_field_by_index_impl(accessor, index);)
 }
 
+// ciEnv::check_field_resolved
+//
+// Check whether this field has been resolved
+bool ciEnv::check_field_resolved(ciInstanceKlass* accessor, int index) {
+  GUARDED_VM_ENTRY(
+    ciConstantPoolCache* cache = accessor->field_cache();
+    if (cache != NULL) {
+      ciField* field = (ciField*)cache->get(index);
+      if (field != NULL) {
+        return true;
+      }
+    }
+    CompilerThread *thread = CompilerThread::current();
+    assert(accessor->get_instanceKlass()->is_linked(), "must be linked before using its constant-pool");
+    constantPoolHandle cpool(thread, accessor->get_instanceKlass()->constants());
+    
+    //Get the field's name signature, and type.
+    Symbol* name = cpool->name_ref_at(index);
+    if (name == NULL) {
+      return false;
+    }
+    int name_index = cpool->name_and_type_ref_index_at(index);
+    int sig_index = cpool->signature_ref_index_at(name_index);
+    Symbol* signature = cpool->symbol_at(sig_index);
+    if (signature == NULL) {
+      return false;
+    }
+    return true;
+  )
+}
+
+// ------------------------------------------------------------------
+//
+// Check if all fields needed by this method in ConstantPool are resolved
+bool ciEnv::check_method_fields_all_resolved(ciMethod *method) {
+  ciInstanceKlass *klass = method->holder();
+  ciBytecodeStream stream(method);
+  int start = 0;
+  int limit = method->code_size();
+  stream.reset_to_bci(start);
+  Bytecodes::Code code;
+  while ((code = stream.next()) != ciBytecodeStream::EOBC && stream.cur_bci() < limit)
+  {
+    if (code == Bytecodes::_getfield ||
+        code == Bytecodes::_getstatic ||
+        code == Bytecodes::_putfield code == Bytecodes::_putstatic)
+    {
+      if (!check_field_resolved(klass, stream..get_index_u2_cpcache()))
+      {
+        return false;
+      }
+    }
+  }
+}
 // ------------------------------------------------------------------
 // ciEnv::lookup_method
 //

@@ -275,6 +275,8 @@ class ProfileData : public ResourceObj {
   friend class TypeEntries;
   friend class ReturnTypeEntry;
   friend class TypeStackSlotEntries;
+  friend class ProfileRecorder;
+  friend class PreloadJitInfo;
 private:
   enum {
     tab_width_one = 16,

@@ -38,6 +38,7 @@
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jwarmup/jitWarmUp.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -751,6 +752,14 @@ void SafepointSynchronize::do_cleanup_tasks() {
     cleanup.work(0);
   }
 
+  if (CompilationWarmUp) {
+    JitWarmUp* jwp = JitWarmUp::instance();
+    assert(jwp != NULL, "sanity check");
+    PreloadClassChain* chain = jwp->preloader()->chain();
+    if (chain->should_deoptimize_methods()) {
+      chain->deoptimize_methods();
+    }
+  }
   // Finish monitor deflation.
   ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
 }
