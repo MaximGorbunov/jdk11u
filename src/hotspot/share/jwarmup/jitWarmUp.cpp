@@ -242,7 +242,7 @@ void ProfileRecorder::init() {
 
 int ProfileRecorder::assign_class_init_order(InstanceKlass* klass) {
   // ignore anonymous class
-  if (klass->is_unsafe_anonymous()) {
+  if (klass->is_anonymous()) {
     return -1;
   }
   Symbol* name = klass->name();
@@ -267,7 +267,7 @@ int ProfileRecorder::assign_class_init_order(InstanceKlass* klass) {
 }
 
 void ProfileRecorder::add_method(Method* m, int bci) {
-  MutexLocker mu(ProfileRecorder_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker mu(ProfileRecorder_lock);
   // if is flushed, stop adding method
   if (flushed()) {
     return;
