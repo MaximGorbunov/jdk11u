@@ -968,7 +968,7 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
   if (is_native() || is_abstract() || h_m()->is_accessor()) {
     return true;
   }
-  if (CompilationWarmup && CURRENT_ENV->task()->is_jwarmup_compilation()) {
+  if (CompilationWarmUp && CURRENT_ENV->task()->is_jwarmup_compilation()) {
     _method_data = CURRENT_ENV->get_empty_methodData();
     return false;
   }
