@@ -227,6 +227,9 @@ public:
     assert(begin <= end && end <= sym->utf8_length(), "just checking");
     return lookup(sym, begin, end, THREAD);
   }
+  static Symbol* new_symbol(const char* name) {
+    return new_symbol(name, (int)strlen(name));
+  }
 
   // Create a symbol in the arena for symbols that are not deleted
   static Symbol* new_permanent_symbol(const char* name, TRAPS);
