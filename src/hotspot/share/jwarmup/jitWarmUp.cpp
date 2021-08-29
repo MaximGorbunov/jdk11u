@@ -155,13 +155,13 @@ bool JitWarmUp::commit_compilation(methodHandle m, int bci, TRAPS) {
   return false;
 }
 
-Symbol* JitWarmUp::get_class_loader_name(ClassLoaderData* cld) {
+Symbol* JitWarmUp::get_class_loader_name(ClassLoaderData* cld, TRAPS) {
   Handle class_loader(Thread::current(), cld->class_loader());
   Symbol* loader_name = NULL;
   if (class_loader() != NULL) {
     loader_name = PreloadJitInfo::remove_meaningless_suffix(class_loader()->klass()->name());
   } else {
-    loader_name = SymbolTable::new_symbol("NULL");
+    loader_name = SymbolTable::new_symbol("NULL", THREAD);
   }
   return loader_name;
 }
@@ -247,7 +247,8 @@ int ProfileRecorder::assign_class_init_order(InstanceKlass* klass) {
   }
   Symbol* name = klass->name();
   Symbol* path = klass->source_file_path();
-  Symbol* loader_name = JitWarmUp::get_class_loader_name(klass->class_loader_data());
+  Thread* THREAD = Thread::current();
+  Symbol* loader_name = JitWarmUp::get_class_loader_name(klass->class_loader_data(), THREAD);
   MutexLocker mu(ProfileRecorder_lock);
   if (_init_list_tail_node == NULL) {
     // add head node
@@ -671,7 +672,8 @@ PreloadClassEntry* PreloadClassDictionary::find_entry(InstanceKlass* k) {
   if (path == NULL) {
     path = SymbolTable::new_symbol(JVM_DEFINE_CLASS_PATH);
   }
-  Symbol* loader_name = JitWarmUp::get_class_loader_name(k->class_loader_data());
+  Thread* THREAD = Thread::current();
+  Symbol* loader_name = JitWarmUp::get_class_loader_name(k->class_loader_data(), THREAD);
   int hash = name->identity_hash();
   return find_entry(hash, name, loader_name, path);
 }
@@ -1128,7 +1130,7 @@ void PreloadClassChain::warmup_impl() {
       assert(THREAD->is_Java_thread(), "sanity check");
       klass->initialize(THREAD);
       if (HAS_PENDING_EXCEPTION) {
-        Symbol *loader = JitWarmUp::get_class_loader_name(klass->class_loader_data());
+        Symbol *loader = JitWarmUp::get_class_loader_name(klass->class_loader_data(), THREAD);
         ResourceMark rm;
         log_error(warmup)("[JitWarmUp] ERROR: Exceptions happened in initializing %s being loaded by %s",
                           klass->name()->as_C_string(), loader->as_C_string());

@@ -92,7 +92,7 @@ public:
 
   // get loader name through ClassLoaderData, if ClassLoader is
   // bootstrap classloader, return "NULL"
-  static Symbol* get_class_loader_name(ClassLoaderData* cld);
+  static Symbol* get_class_loader_name(ClassLoaderData* cld, TRAPS);
 
 private:
   // singleton holder
