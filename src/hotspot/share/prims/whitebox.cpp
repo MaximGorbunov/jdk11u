@@ -1926,36 +1926,36 @@ WB_ENTRY(jobjectArray, WB_GetMethodListFromLogfile(JNIEnv* env, jobject o))
   return result;
 WB_END
 
-+ WB_ENTRY(jboolean, WB_TestFixDanglingPointerInDeopt(JNIEnv* env, jobject o, jstring name))
-+   Handle h_name(THREAD, JNIHandles::resolve(name));
-+   if (h_name.is_null()) return false;
-+   Symbol* sym = java_lang_String::as_symbol(h_name());
-+ 
-+   JitWarmUp* jwp = JitWarmUp::instance();
-+   PreloadClassChain* chain = jwp->preloader()->chain();
-+   assert(chain != NULL, "sanity check");
-+   int index = chain->length() - 1;
-+   PreloadMethodHolder* begin_holder = NULL;
-+   while (index > 0 && begin_holder == NULL) {
-+     PreloadClassChain::PreloadClassChainEntry* entry = chain->at(index);
-+     begin_holder = entry->method_holder();
-+     index--;
-+   }
-+   if (begin_holder == NULL) {
-+     return false;
-+   }
-+   MethodHolderIterator iter(chain, begin_holder, index);
-+   while (*iter != NULL) {
-+     PreloadMethodHolder* pmh = *iter;
-+     if (pmh->name()->fast_compare(sym) == 0) {
-+       if (pmh->resolved_method() != NULL) {
-+         return false;
-+       }
-+     }
-+     iter.next();
-+   }
-+   return true;
-+ WB_END
+WB_ENTRY(jboolean, WB_TestFixDanglingPointerInDeopt(JNIEnv* env, jobject o, jstring name))
+  Handle h_name(THREAD, JNIHandles::resolve(name));
+  if (h_name.is_null()) return false;
+  Symbol* sym = java_lang_String::as_symbol(h_name());
+
+  JitWarmUp* jwp = JitWarmUp::instance();
+  PreloadClassChain* chain = jwp->preloader()->chain();
+  assert(chain != NULL, "sanity check");
+  int index = chain->length() - 1;
+  PreloadMethodHolder* begin_holder = NULL;
+  while (index > 0 && begin_holder == NULL) {
+    PreloadClassChain::PreloadClassChainEntry* entry = chain->at(index);
+    begin_holder = entry->method_holder();
+    index--;
+  }
+  if (begin_holder == NULL) {
+    return false;
+  }
+  MethodHolderIterator iter(chain, begin_holder, index);
+  while (*iter != NULL) {
+    PreloadMethodHolder* pmh = *iter;
+    if (pmh->name()->fast_compare(sym) == 0) {
+      if (pmh->resolved_method() != NULL) {
+        return false;
+      }
+    }
+    iter.next();
+  }
+  return true;
+WB_END
 
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
