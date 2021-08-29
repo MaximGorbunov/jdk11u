@@ -669,10 +669,10 @@ void PreloadClassDictionary::remove_entry(unsigned int hash_value,
 PreloadClassEntry* PreloadClassDictionary::find_entry(InstanceKlass* k) {
   Symbol* name = k->name();
   Symbol* path = k->source_file_path();
-  if (path == NULL) {
-    path = SymbolTable::new_symbol(JVM_DEFINE_CLASS_PATH);
-  }
   Thread* THREAD = Thread::current();
+  if (path == NULL) {
+    path = SymbolTable::new_symbol(JVM_DEFINE_CLASS_PATH, THREAD);
+  }
   Symbol* loader_name = JitWarmUp::get_class_loader_name(k->class_loader_data(), THREAD);
   int hash = name->identity_hash();
   return find_entry(hash, name, loader_name, path);
@@ -1630,7 +1630,7 @@ bool JitWarmUpLogParser::parse_header() {
 }
 
 #define CREATE_SYMBOL(char_name)      \
-  SymbolTable::new_symbol(char_name, (int)strlen(char_name))
+  SymbolTable::new_symbol(char_name, (int)strlen(char_name), THREAD)
 
 bool JitWarmUpLogParser::parse_class_init_section() {
   ResourceMark rm;
