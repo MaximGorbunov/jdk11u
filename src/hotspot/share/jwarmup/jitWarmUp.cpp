@@ -159,7 +159,7 @@ Symbol* JitWarmUp::get_class_loader_name(ClassLoaderData* cld, TRAPS) {
   Handle class_loader(Thread::current(), cld->class_loader());
   Symbol* loader_name = NULL;
   if (class_loader() != NULL) {
-    loader_name = PreloadJitInfo::remove_meaningless_suffix(class_loader()->klass()->name());
+    loader_name = PreloadJitInfo::remove_meaningless_suffix(class_loader()->klass()->name(), THREAD);
   } else {
     loader_name = SymbolTable::new_symbol("NULL", THREAD);
   }
@@ -1826,7 +1826,7 @@ PreloadJitInfo::~PreloadJitInfo() {
   delete _chain;
 }
 
-Symbol* PreloadJitInfo::remove_meaningless_suffix(Symbol* s) {
+Symbol* PreloadJitInfo::remove_meaningless_suffix(Symbol* s, TRAPS) {
   ResourceMark rm;
   Thread* t = Thread::current();
   Symbol* result = s;
@@ -1843,7 +1843,7 @@ Symbol* PreloadJitInfo::remove_meaningless_suffix(Symbol* s) {
   if (i < len - 1) {
     // example: s is $$123, convert to $
     i = i == 0 ? i = 1: i;
-    result = SymbolTable::new_symbol(s_char, i);
+    result = SymbolTable::new_symbol(s_char, i, THREAD);
     s_char = result->as_C_string();
   }
   // second, remove number or $+number

@@ -867,7 +867,7 @@ public:
   void notify_application_startup_is_done();
 
   // remove known meaningless suffix
-  static Symbol* remove_meaningless_suffix(Symbol* s);
+  static Symbol* remove_meaningless_suffix(Symbol* s, TRAPS);
 
 private:
   PreloadClassDictionary*  _dict;
