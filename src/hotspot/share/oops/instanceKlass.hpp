@@ -757,24 +757,6 @@ public:
   unsigned int initialize_order()          { return _initialize_order; }
   void set_initialize_order(int order)     { _initialize_order = order; }
 #endif
-  
-  // JWarmUP support
-  unsigned int crc32()                     { return _crc32; }
-  void set_crc32(unsigned int crc32)       { _crc32 = crc32; }
-
-  unsigned int bytes_size()                { return _class_bytes_size; }
-  void set_bytes_size(unsigned int size)   { _class_bytes_size = size; }
-
-  bool is_jwarmup_recorded()               { return _is_jwarmup_recorded; }
-  void set_jwarmup_recorded(bool value)    { _is_jwarmup_recorded = value; }
-
-  Symbol* source_file_path()               { return _source_file_path; }
-  void set_source_file_path(Symbol* value) { _source_file_path = value; }
-
-#ifndef PRODUCT
-  unsigned int initialize_order()          { return _initialize_order; }
-  void set_initialize_order(int order)     { _initialize_order = order; }
-#endif
 
   // nonstatic oop-map blocks
   static int nonstatic_oop_map_size(unsigned int oop_map_count) {
