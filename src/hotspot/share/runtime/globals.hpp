@@ -2722,7 +2722,7 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Deoptimize recorded methods before JWarmUP compilation")         \
                                                                             \
   lp64_product(intx, CompilationWarmUpRecordMinLevel, 3,                    \
-          "Minimal compilation level recorded in JWarmUP recording phase")  \          
+          "Minimal compilation level recorded in JWarmUP recording phase")         
 
 #define VM_FLAGS(develop,                                                   \
                  develop_pd,                                                \
