@@ -2368,6 +2368,7 @@ void ConstantPool::preload_jwarmup_classes(TRAPS) {
   s.push(cp->pool_holder());
   preload_jwarmup_classes_impl(s, THREAD);
   THREAD->set_in_eagerly_loading_class(false);
+}
 
 // should not be guarded in PreloadClassChain_lock
 Klass* ConstantPool::resolve_class_from_slot(int which, TRAPS) {
