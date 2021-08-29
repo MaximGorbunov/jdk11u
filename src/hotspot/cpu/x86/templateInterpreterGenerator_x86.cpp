@@ -425,7 +425,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(
     __ get_method_counters(rbx, rax, done);
     #ifdef _LP64
       // JitWamup suppot, reocrd method first invocation's initialization order
-      if (CompilationWarmupRecording) {
+      if (CompilationWarmUpRecording) {
         Label skip_record;
         JitWarmUp* jitWarmUp = JitWarmUp::instance();
         assert(jitwarmup != NULL, "jitWarmUp should not be NULL");
