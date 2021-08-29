@@ -95,7 +95,6 @@ JitWarmUp::JitWarmUpState JitWarmUp::init_for_recording() {
 }
 
 JitWarmUp::JitWarmUpState JitWarmUp::init_for_warmup() {
-  assert(!CompilationWarmUpRecording && CompilationWarmUp, "JVM option verify");
   if (CompilationWarmUpExclude != NULL) {
     _excluding_matcher = new (ResourceObj::C_HEAP, mtClass) SymbolMatcher<mtClass>(CompilationWarmUpExclude);
   }
