@@ -1995,11 +1995,6 @@ private:
 };
 
 void PreloadJitInfo::init() {
-  if (CompilationWarmUpRecording) {
-    log_error(warmup)("[JitWarmUp] ERROR: you can not set both CompilationWarmUp and CompilationWarmUpRecording");
-    _state = IS_ERR;
-    return;
-  }
   // check class data sharing
   if (UseSharedSpaces) {
     log_error(warmup)("[JitWarmUp] ERROR: flag UseSharedSpaces must be off");
