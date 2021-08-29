@@ -1655,7 +1655,7 @@ bool JitWarmUpLogParser::parse_class_init_section() {
     Symbol* name = CREATE_SYMBOL(name_char, THREAD);
     Symbol* loader_name = CREATE_SYMBOL(loader_char, THREAD);
     Symbol* path = CREATE_SYMBOL(path_char, THREAD);
-    loader_name = PreloadJitInfo::remove_meaningless_suffix(loader_name);
+    loader_name = PreloadJitInfo::remove_meaningless_suffix(loader_name, THREAD);
     chain->at(i)->set_class_name(name);
     chain->at(i)->set_loader_name(loader_name);
     chain->at(i)->set_path(path);
@@ -1671,7 +1671,7 @@ bool JitWarmUpLogParser::parse_class_init_section() {
     if (e->chain_offset() < i || should_ignore_this_class(name)) {
       chain->at(i)->set_skipped();
     } else {
-      Symbol* name_no_suffix = PreloadJitInfo::remove_meaningless_suffix(name);
+      Symbol* name_no_suffix = PreloadJitInfo::remove_meaningless_suffix(name, THREAD);
       if (name_no_suffix->fast_compare(name) != 0) {
         unsigned int hash_no_suffix = name_no_suffix->identity_hash();
         PreloadClassEntry* e_no_suffix = info_holder()->dict()->
@@ -1751,7 +1751,7 @@ PreloadMethodHolder* JitWarmUpLogParser::next() {
   char* class_loader_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(class_loader_char, NULL);
   Symbol* class_loader = CREATE_SYMBOL(class_loader_char, THREAD);
-  class_loader = PreloadJitInfo::remove_meaningless_suffix(class_loader);
+  class_loader = PreloadJitInfo::remove_meaningless_suffix(class_loader, THREAD);
   char* path_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(path_char, NULL);
   Symbol* path = CREATE_SYMBOL(path_char, THREAD);
