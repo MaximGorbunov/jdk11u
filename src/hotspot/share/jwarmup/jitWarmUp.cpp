@@ -1643,6 +1643,7 @@ bool JitWarmUpLogParser::parse_class_init_section() {
   PreloadClassChain* chain = new PreloadClassChain(cnt);
   info_holder()->set_chain(chain);
   chain->set_holder(this->info_holder());
+  Thread *THREAD = Thread::current();
 
   for (int i = 0; i < (int)cnt; i++) {
     char* name_char = read_string();
@@ -1651,9 +1652,9 @@ bool JitWarmUpLogParser::parse_class_init_section() {
     LOGPARSER_ILLEGAL_STRING_CHECK(loader_char, false);
     char* path_char = read_string();
     LOGPARSER_ILLEGAL_STRING_CHECK(path_char, false);
-    Symbol* name = CREATE_SYMBOL(name_char);
-    Symbol* loader_name = CREATE_SYMBOL(loader_char);
-    Symbol* path = CREATE_SYMBOL(path_char);
+    Symbol* name = CREATE_SYMBOL(name_char, THREAD);
+    Symbol* loader_name = CREATE_SYMBOL(loader_char, THREAD);
+    Symbol* path = CREATE_SYMBOL(path_char, THREAD);
     loader_name = PreloadJitInfo::remove_meaningless_suffix(loader_name);
     chain->at(i)->set_class_name(name);
     chain->at(i)->set_loader_name(loader_name);
@@ -1703,6 +1704,7 @@ bool JitWarmUpLogParser::has_next() {
 
 PreloadMethodHolder* JitWarmUpLogParser::next() {
   ResourceMark rm;
+  Thread *THREAD = Thread::current();
   _fs->fseek(_position, SEEK_SET);
   int begin_pos = _position;
   u4 section_size = read_u4();
@@ -1720,10 +1722,10 @@ PreloadMethodHolder* JitWarmUpLogParser::next() {
   // method info
   char* method_name_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(method_name_char, NULL);
-  Symbol* method_name = CREATE_SYMBOL(method_name_char);
+  Symbol* method_name = CREATE_SYMBOL(method_name_char, THREAD);
   char* method_sig_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(method_sig_char, NULL);
-  Symbol* method_sig = CREATE_SYMBOL(method_sig_char);
+  Symbol* method_sig = CREATE_SYMBOL(method_sig_char, THREAD);
   u4 first_invoke_init_order = read_u4();
   // INVALID_FIRST_INVOKE_INIT_ORDER means no first_invoke_init_order record in log file,
   // so put this method at last entry of class init chain
@@ -1740,7 +1742,7 @@ PreloadMethodHolder* JitWarmUpLogParser::next() {
   // class info
   char* class_name_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(class_name_char, NULL);
-  Symbol* class_name = CREATE_SYMBOL(class_name_char);
+  Symbol* class_name = CREATE_SYMBOL(class_name_char, THREAD);
   // ignore
   if (should_ignore_this_class(class_name)) {
     _position = end_pos;
@@ -1748,11 +1750,11 @@ PreloadMethodHolder* JitWarmUpLogParser::next() {
   }
   char* class_loader_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(class_loader_char, NULL);
-  Symbol* class_loader = CREATE_SYMBOL(class_loader_char);
+  Symbol* class_loader = CREATE_SYMBOL(class_loader_char, THREAD);
   class_loader = PreloadJitInfo::remove_meaningless_suffix(class_loader);
   char* path_char = read_string();
   LOGPARSER_ILLEGAL_STRING_CHECK(path_char, NULL);
-  Symbol* path = CREATE_SYMBOL(path_char);
+  Symbol* path = CREATE_SYMBOL(path_char, THREAD);
 
   PreloadClassDictionary* dict = this->info_holder()->dict();
   unsigned int dict_hash = class_name->identity_hash();
