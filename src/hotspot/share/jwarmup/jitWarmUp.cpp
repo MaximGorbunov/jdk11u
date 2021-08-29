@@ -118,7 +118,8 @@ JitWarmUp::JitWarmUpState JitWarmUp::init_for_warmup() {
 void JitWarmUp::init() {
   if (CompilationWarmUp) {
     init_for_warmup();
-  } else if(CompilationWarmUpRecording) {
+  }
+  if(CompilationWarmUpRecording) {
     init_for_recording();
   }
   // check valid
