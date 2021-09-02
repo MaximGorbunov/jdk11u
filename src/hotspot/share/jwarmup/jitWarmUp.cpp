@@ -79,7 +79,6 @@ JitWarmUp* JitWarmUp::create_instance() {
 
 // JitWarmUp Init functions
 JitWarmUp::JitWarmUpState JitWarmUp::init_for_recording() {
-  assert(CompilationWarmUpRecording && !CompilationWarmUp, "JVM option verify failure");
   _recorder = new ProfileRecorder();
   _recorder->set_holder(this);
   _recorder->init();
@@ -96,7 +95,6 @@ JitWarmUp::JitWarmUpState JitWarmUp::init_for_recording() {
 }
 
 JitWarmUp::JitWarmUpState JitWarmUp::init_for_warmup() {
-  assert(!CompilationWarmUpRecording && CompilationWarmUp, "JVM option verify");
   if (CompilationWarmUpExclude != NULL) {
     _excluding_matcher = new (ResourceObj::C_HEAP, mtClass) SymbolMatcher<mtClass>(CompilationWarmUpExclude);
   }
@@ -134,6 +132,7 @@ JitWarmUp::JitWarmUpState JitWarmUp::flush_logfile() {
   if(_state == IS_ERR) {
     return _state;
   }
+  assert(_recorder != NULL, "recorder is not initialized");
   _recorder->flush();
   if (_recorder->is_valid()) {
     _state = IS_OK;
@@ -263,7 +262,7 @@ int ProfileRecorder::assign_class_init_order(InstanceKlass* klass) {
 }
 
 void ProfileRecorder::add_method(Method* m, int bci) {
-  MutexLocker mu(ProfileRecorder_lock);
+  MutexLockerEx mu(ProfileRecorder_lock, Mutex::_no_safepoint_check_flag);
   // if is flushed, stop adding method
   if (flushed()) {
     return;

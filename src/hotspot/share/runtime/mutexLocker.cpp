@@ -251,7 +251,7 @@ void mutex_init() {
 
   def(SystemDictionary_lock        , PaddedMonitor, leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
   def(SharedDictionary_lock        , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
-  def(ProfileRecorder_lock         , PaddedMutex  , nonleaf+2,   true,  Monitor::_safepoint_check_always); // used for JitWarmUp
+  def(ProfileRecorder_lock         , PaddedMutex  , nonleaf+2,   true,  Monitor::_safepoint_check_sometimes); // used for JitWarmUp
   def(PreloadClassChain_lock       , PaddedMutex  , max_nonleaf, true,  Monitor::_safepoint_check_always); // used for JitWarmUp
   def(JitWarmUpPrint_lock          , PaddedMutex  , max_nonleaf, true,  Monitor::_safepoint_check_always); // used for JitWarmUp  
   def(Module_lock                  , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_always);

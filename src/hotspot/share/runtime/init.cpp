@@ -115,14 +115,6 @@ jint init_globals() {
     return status;
 
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
-  if (CompilationWarmUpRecording) {
-    JitWarmUp* jwp = JitWarmUp::create_instance();
-    jwp->init_for_recording();
-    if (!jwp->is_valid()) {
-      tty->print_cr("[JitWarmUp] ERROR: init error.");
-      vm_exit(-1);
-    }
-  }
   interpreter_init();        // before any methods loaded
   invocationCounter_init();  // before any methods loaded
   accessFlags_init();
@@ -130,12 +122,17 @@ jint init_globals() {
   InterfaceSupport_init();
   VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
-  if (CompilationWarmUp) {
+  if (CompilationWarmUp || CompilationWarmUpRecording) {
     JitWarmUp* jwp = JitWarmUp::create_instance();
-      jwp->init_for_warmup();
+    if (CompilationWarmUpRecording) {
+      jwp->init_for_recording();
+    }
+    if (CompilationWarmUp) {
+        jwp->init_for_warmup();
+    }
     if (!jwp->is_valid()) {
       tty->print_cr("[JitWarmUp] ERROR: init error.");
-      vm_exit(-1);
+     vm_exit(-1);
     }
   }
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
